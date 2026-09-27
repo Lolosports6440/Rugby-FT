@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Rugby FT — V2</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#d1d5db;--accent:#111827;--home:#dbeafe;--away:#fee2e2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);font-size:16px}
+header{background:#111827;color:white;padding:16px;position:sticky;top:0;z-index:10}
+h1{font-size:22px;margin:0 0 12px}.grid{display:grid;gap:10px}.match-grid{grid-template-columns:1fr 1fr}.score-grid{grid-template-columns:1fr 1fr}
+label{font-weight:700;font-size:13px;display:block;margin-bottom:4px}.field{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:white}
+.score-box{text-align:center;background:#374151;border-radius:12px;padding:10px}.score-box input{width:70px;font-size:30px;font-weight:800;text-align:center;background:transparent;color:white;border:0}.score-box small{display:block;color:#d1d5db}
+main{max-width:900px;margin:auto;padding:14px}.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px #0001}
+h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:10px 0}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}.team-title{text-align:center;font-weight:800;padding:9px;border-radius:10px;margin-bottom:8px}.home-title{background:var(--home)}.away-title{background:var(--away)}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.player-row{display:grid;grid-template-columns:32px 1fr;gap:6px;align-items:center;margin-bottom:6px}.num{font-weight:800;text-align:center}.coach{margin-top:9px}.coach .field{margin-bottom:6px}
+.side-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.side-btn{padding:15px;border:2px solid var(--line);border-radius:12px;font-weight:900;font-size:17px;background:white}.side-btn.active.home{background:var(--home);border-color:#2563eb}.side-btn.active.away{background:var(--away);border-color:#dc2626}
+.action-grid{display:grid;grid-template-columns:1fr;gap:10px}.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action-btn{min-height:72px;padding:14px 8px;border:2px solid var(--line);border-radius:12px;background:white;font-weight:900;font-size:18px}.action-btn.active{background:#111827;color:white}
+#playerSelect{min-height:48px}.comment{min-height:70px;resize:vertical}.add{width:100%;padding:15px;border:0;border-radius:12px;background:#111827;color:white;font-size:17px;font-weight:900;margin-top:10px}.undo{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:white;font-weight:800;margin-top:8px}
+.summary-table{width:100%;border-collapse:collapse}.summary-table td{padding:8px 4px;border-bottom:1px solid #eee}.summary-table td:last-child{text-align:right;font-weight:800}
+.timeline{list-style:none;padding:0;margin:0}.event{padding:10px 0;border-bottom:1px solid #eee}.event-head{font-weight:800}.event-meta{color:var(--muted);font-size:14px;margin-top:3px}.event-comment{margin-top:5px;padding-left:12px;border-left:3px solid #d1d5db}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.danger{color:#b91c1c}.small{font-size:13px;color:var(--muted)}
+@media(max-width:650px){.teams,.comp-grid{grid-template-columns:1fr}.action-grid{grid-template-columns:1fr}.two{grid-template-columns:1fr}.match-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>Rugby FT — V2</h1>
+<div class="grid match-grid">
+<div><label>Équipe domicile</label><input id="homeName" class="field" placeholder="Domicile"></div>
+<div><label>Équipe visiteurs</label><input id="awayName" class="field" placeholder="Visiteurs"></div>
+<div><label>Date</label><input id="date" class="field" type="date"></div>
+<div><label>Lieu</label><input id="venue" class="field" placeholder="Stade"></div>
+<div><label>Arbitre</label><input id="referee" class="field" placeholder="Nom de l'arbitre"></div>
+</div>
+<div class="grid score-grid" style="margin-top:10px">
+<div class="score-box"><small>Score final</small><input id="homeScore" type="number" min="0" value="0"> - <input id="awayScore" type="number" min="0" value="0"></div>
+<div class="score-box"><small>Mi-temps</small><input id="htHome" type="number" min="0" value="0"> - <input id="htAway" type="number" min="0" value="0"></div>
+</div>
+</header>
+
+<main>
+<div style="position:sticky;top:74px;z-index:8;margin-bottom:10px">
+<button class="add" style="margin:0;box-shadow:0 2px 8px #0002" onclick="goToNewAction()">⚡ NOUVELLE ACTION</button>
+</div>
+<section class="card">
+<h2>Composition</h2>
+<div class="teams">
+<div>
+<div class="team-title home-title" id="homeCompTitle">Domicile</div>
+<div id="homePlayers"></div>
+</div>
+<div>
+<div class="team-title away-title" id="awayCompTitle">Visiteurs</div>
+<div id="awayPlayers"></div>
+</div>
+</div>
+</section>
+
+<section class="card" id="newAction">
+<h2>Nouvelle action</h2>
+<div class="side-buttons">
+<button class="side-btn" id="homeBtn" onclick="selectSide('home')">🏠 DOMICILE</button>
+<button class="side-btn" id="awayBtn" onclick="selectSide('away')">VISITEURS</button>
+</div>
+<div><label>Minute</label><input id="minute" class="field" inputmode="numeric" placeholder="27" style="max-width:110px"></div><div style="margin-top:8px"><label>Action</label><div class="actions" id="actionButtons"></div></div>
+<div style="margin-top:10px"><label>Joueur</label><select id="playerSelect" class="field"></select></div>
+<div style="margin-top:10px"><label>Commentaire (facultatif)</label><textarea id="comment" class="field comment" placeholder="Ex. après ballon porté, faute au sol…"></textarea></div>
+<button class="add" onclick="addEvent()">+ AJOUTER L’ACTION</button>
+<button class="undo" onclick="undoLast()">↶ Annuler la dernière action</button>
+</section>
+
+<section class="card">
+<h2>Fiche technique</h2>
+<div id="summary"></div>
+</section>
+
+<section class="card">
+<h2>Chronologie</h2>
+<div id="timeline"></div>
+</section>
+
+<section class="card">
+<div class="two">
+<button class="undo" onclick="exportJSON()">Exporter le match</button>
+<button class="undo danger" onclick="resetMatch()">Réinitialiser</button>
+</div>
+<p class="small">Les données sont conservées sur cet appareil via le stockage local du navigateur.</p>
+</section>
+</main>
+
+<script>
+const state={side:null,action:null,events:[]};
+const actions=[
+ ['Essai',5],['Transformation',2],['Pénalité',3],['Drop',3],['Essai de pénalité',7],
+ ['Carton jaune',0],['Carton rouge',0],['Carton blanc',0],['Remplacement',0]
+];
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function playerInputs(side){
+ let h='';
+ for(let i=1;i<=23;i++) h+=`<div class="player-row"><div class="num">${i}</div><input class="field ${side}-p" data-num="${i}" placeholder="Joueur ${i}"></div>`;
+ h+='<div class="coach"><label>Entraîneur 1</label><input class="field '+side+'-c" placeholder="Nom"></div>';
+ h+='<div class="coach"><label>Entraîneur 2</label><input class="field '+side+'-c" placeholder="Nom"></div>';
+ h+='<div class="coach"><label>Entraîneur 3</label><input class="field '+side+'-c" placeholder="Nom"></div>';
+ return h;
+}
+document.getElementById('homePlayers').innerHTML=playerInputs('home');
+document.getElementById('awayPlayers').innerHTML=playerInputs('away');
+
+document.getElementById('actionButtons').innerHTML=actions.map((a,i)=>`<button class="action-btn" data-action="${esc(a[0])}" onclick="selectAction(${i})">${a[0]}</button>`).join('');
+
+function selectSide(side){
+ state.side=side;
+ document.getElementById('homeBtn').classList.toggle('active',side==='home');
+ document.getElementById('awayBtn').classList.toggle('active',side==='away');
+ updatePlayers();
+}
+function selectAction(i){
+ state.action=actions[i][0];
+ document.querySelectorAll('.action-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+}
+function updatePlayers(){
+ const sel=document.getElementById('playerSelect');
+ const side=state.side||'home';
+ const inputs=[...document.querySelectorAll('.'+side+'-p')];
+ sel.innerHTML='<option value="">— Sélectionner le joueur —</option>'+inputs.map(x=>`<option value="${x.dataset.num}">${x.dataset.num} — ${esc(x.value||'Joueur '+x.dataset.num)}</option>`).join('');
+}
+document.addEventListener('input',e=>{
+ if(e.target.matches('.home-p,.away-p')){
+   updatePlayers();
+   save();
+ }
+});
+function teamName(side){return document.getElementById(side+'Name').value|| (side==='home'?'Domicile':'Visiteurs');}
+function playerName(side,num){
+ const x=document.querySelector(`.${side}-p[data-num="${CSS.escape(num)}"]`);
+ return x?.value||`N°${num}`;
+}
+function addEvent(){
+ if(!state.side||!state.action){alert('Choisis d’abord DOMICILE/VISITEURS puis une action.');return}
+ const minute=document.getElementById('minute').value.trim();
+ const player=document.getElementById('playerSelect').value;
+ if(!minute){alert('Indique la minute.');return}
+ const ev={id:Date.now()+Math.random(),side:state.side,minute,action:state.action,player,playerName:player?playerName(state.side,player):'',comment:document.getElementById('comment').value.trim()};
+ state.events.push(ev);
+ state.events = Array.from(new Map(state.events.map(e=>[e.id,e])).values());
+ state.events.sort((a,b)=>(parseInt(a.minute)||0)-(parseInt(b.minute)||0)||a.id-b.id);
+ document.getElementById('comment').value='';
+ render();save();
+}
+function undoLast(){if(state.events.length){state.events.pop();render();save();}}
+function render(){
+ const h=teamName('home'),a=teamName('away');
+ document.getElementById('homeCompTitle').textContent=h;
+ document.getElementById('awayCompTitle').textContent=a;
+ const totals={home:{},away:{}};
+ state.events.forEach(e=>{totals[e.side][e.action]=(totals[e.side][e.action]||0)+1});
+ const rows=actions.filter(x=>x[1]||['Carton jaune','Carton rouge','Carton blanc'].includes(x[0]));
+ let out='<table class="summary-table">';
+ rows.forEach(([name])=>out+=`<tr><td>${name}</td><td>${totals.home[name]||0} — ${totals.away[name]||0}</td></tr>`);
+ out+='</table>';
+ const calculated={home:0,away:0}, halftime={home:0,away:0};
+state.events.forEach(e=>{
+ const def=actions.find(a=>a[0]===e.action), pts=def?def[1]:0;
+ calculated[e.side]+=pts;
+ if((parseInt(e.minute)||0)<=40) halftime[e.side]+=pts;
+});
+document.getElementById('homeScore').value=calculated.home;
+document.getElementById('awayScore').value=calculated.away;
+document.getElementById('htHome').value=halftime.home;
+document.getElementById('htAway').value=halftime.away;
+document.getElementById('summary').innerHTML=`<div style="font-size:22px;font-weight:900;text-align:center;margin-bottom:4px">${calculated.home} — ${calculated.away}</div><div class="small" style="text-align:center;margin-bottom:10px">Score calculé automatiquement à partir des actions saisies</div>${out}`;
+ const sorted=[...state.events].sort((a,b)=>(parseInt(a.minute)||0)-(parseInt(b.minute)||0)||a.id-b.id);
+ if(!sorted.length){document.getElementById('timeline').innerHTML='<p class="small">Aucune action enregistrée.</p>';return}
+ document.getElementById('timeline').innerHTML='<ul class="timeline">'+sorted.map(e=>{
+   const side=e.side==='home'?h:a;
+   const p=e.player?`N°${esc(e.player)} ${esc(e.playerName)}`:'';
+   return `<li class="event"><div class="event-head">${esc(e.minute)}' — ${esc(side)} — ${esc(e.action)}${p?' — '+p:''}</div>${e.comment?`<div class="event-comment">${esc(e.comment)}</div>`:''}</li>`;
+ }).join('')+'</ul>';
+}
+function save(){
+ const data={events:state.events};
+ ['homeName','awayName','date','venue','referee','homeScore','awayScore','htHome','htAway'].forEach(id=>data[id]=document.getElementById(id).value);
+ data.homePlayers=[...document.querySelectorAll('.home-p')].map(x=>x.value);
+ data.awayPlayers=[...document.querySelectorAll('.away-p')].map(x=>x.value);
+ data.homeCoaches=[...document.querySelectorAll('.home-c')].map(x=>x.value);
+ data.awayCoaches=[...document.querySelectorAll('.away-c')].map(x=>x.value);
+ localStorage.setItem('rugbyFTv2',JSON.stringify(data));
+}
+function load(){
+ try{
+  const d=JSON.parse(localStorage.getItem('rugbyFTv2')||'null'); if(!d)return;
+  ['homeName','awayName','date','venue','referee','homeScore','awayScore','htHome','htAway'].forEach(id=>{if(d[id]!=null)document.getElementById(id).value=d[id]});
+  (d.homePlayers||[]).forEach((v,i)=>document.querySelectorAll('.home-p')[i].value=v);
+  (d.awayPlayers||[]).forEach((v,i)=>document.querySelectorAll('.away-p')[i].value=v);
+  (d.homeCoaches||[]).forEach((v,i)=>document.querySelectorAll('.home-c')[i].value=v);
+  (d.awayCoaches||[]).forEach((v,i)=>document.querySelectorAll('.away-c')[i].value=v);
+  state.events=d.events||[]; updatePlayers(); render();
+ }catch(e){}
+}
+function exportJSON(){
+ save();
+ const blob=new Blob([localStorage.getItem('rugbyFTv2')||'{}'],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rugby-match.json';a.click();URL.revokeObjectURL(a.href);
+}
+function resetMatch(){
+ if(!confirm('Réinitialiser complètement ce match ?'))return;
+ localStorage.removeItem('rugbyFTv2');location.reload();
+}
+['homeName','awayName','date','venue','referee','homeScore','awayScore','htHome','htAway'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{render();save()}));
+load(); render(); selectSide('home');
+function goToNewAction(){
+ const section=document.getElementById('newAction');
+ if(section) section.scrollIntoView({behavior:'smooth',block:'start'});
+}
+setTimeout(goToNewAction,250);
+</script>
+</body>
+</html>
